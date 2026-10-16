@@ -18,12 +18,15 @@ class Square:
     self.line_start_pos = (-1, -1)
     self.line_end_pos = (-2, -2)
     self.reverse_pos = (-2, -2)
+    self.last_bounce = self.rect.center
 
   def update(self, dt):
-    self.check_pos()
+    line = self.check_pos()
     self.move(dt)
+    return line
 
   def check_pos(self):
+    temp_color = tuple(self.color)
     screen_size = pg.display.get_window_size()
     if self.rect.left < 0:
       if self.rect.left < - 1:
@@ -47,6 +50,13 @@ class Square:
       self.direction.y *= -1
       self.color = c.rainbow(self.color, 30)
 
+    if temp_color != self.color:
+      line = (self.last_bounce, self.rect.center, temp_color)
+      self.last_bounce = self.rect.center
+      return line
+    return False
+
+
   def move(self, dt):
     self.rect.topleft += self.direction * 500 * dt
 
@@ -54,6 +64,9 @@ class Square:
     screen_size = pg.display.get_window_size()
     self.rect = pg.Rect((screen_size[0] / 2, screen_size[1] / 2), self.rect.size)
     self.direction = c.rand_vector()
+
+  def go_back(self):
+    self.__init__((0, 0))
 
   def events(self, event):
     if event.type == pg.MOUSEBUTTONDOWN:
@@ -69,13 +82,18 @@ class Square:
     elif event.type == pg.MOUSEBUTTONUP:
       speed = c.find_dist((0, 0), self.reverse_pos) / 100
 
-      self.direction = pg.Vector2(self.reverse_pos)
-      self.direction.scale_to_length(speed)
+      try:
+        self.direction = pg.Vector2(self.reverse_pos)
+        self.direction.scale_to_length(speed)
+      except ValueError:
+        self.direction = pg.Vector2(0.1, 0.1)
+        self.direction.scale_to_length(speed)
+
       self.line_start_pos = (-1, -1)
       self.og_mouse_pos = (0, 0)
       self.reverse_pos = (-2, -2)
       self.flinging = False
-
+      self.last_bounce = self.rect.center
 
     elif event.type == pg.MOUSEMOTION:
       if self.flinging:
@@ -101,5 +119,6 @@ class Square:
       #   []
       # )
 
+    pg.draw.line(surface, self.color, self.last_bounce, self.rect.center)
     pg.draw.rect(surface, self.color, self.rect)
     surface.blit(self.image, self.image.get_rect(center=self.rect.center))

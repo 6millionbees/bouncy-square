@@ -20,6 +20,10 @@ class Main:
     # Ship
     self.square = Square([c.WIDTH / 2, c.HEIGHT / 2])
 
+    self.lines = pg.Surface((self.screen.get_width(), self.screen.get_height()))
+    self.lines.fill((0, 0, 0))
+
+
 
   def run(self):
     # The bool for the main loop
@@ -32,10 +36,14 @@ class Main:
       # Call events / update running
       self.main_events()
 
-      self.square.update(dt)
+      new_line = self.square.update(dt)
+      if new_line:
+        pg.draw.line(self.lines, new_line[2], new_line[0], new_line[1])
 
       # Fills window
       self.screen.fill(c.BLACK)
+
+      self.screen.blit(self.lines, (0, 0))
 
       self.square.draw(self.screen)
 
@@ -48,12 +56,18 @@ class Main:
     # Close everything
     self.quit()
 
+  def reset(self):
+    self.square.go_back()
+    self.lines = pg.Surface((self.screen.get_width(), self.screen.get_height()))
+
   # Event Handling
   def main_events(self):
     for event in pg.event.get():
       # Quits the game when you press the x
       if event.type == pg.QUIT:
         self.running = False
+      elif event.type == pg.WINDOWRESIZED:
+        self.reset()
       self.square.events(event)
 
 
